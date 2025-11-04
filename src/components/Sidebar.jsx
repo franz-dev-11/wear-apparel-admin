@@ -140,10 +140,10 @@ function Sidebar({ onLogout, user, activeItem, setActiveItem }) {
       {/* Search Bar Container (Kept for styling) */}
       <div className='flex-shrink-0 pb-4 mb-4 border-b border-gray-700/50'>
         <div className='flex justify-center items-center'>
-          <img src={logo} className='w-16 mb-5' alt='Logo' />
+          <img src={logo} className='w-16 mb-2' alt='Logo' />
         </div>
-
-        <div className='relative'>
+        <h1 className='text-center font-extrabold'>ADMIN CONSOLE</h1>
+        {/* <div className='relative'>
           <input
             type='text'
             placeholder='Search...'
@@ -153,7 +153,7 @@ function Sidebar({ onLogout, user, activeItem, setActiveItem }) {
             icon={faSearch}
             className='absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400'
           />
-        </div>
+        </div> */}
       </div>
 
       {/* Navigation Sections (Scrollable) */}

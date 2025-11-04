@@ -19,7 +19,12 @@ const CreateUserForm = () => {
       setMessage(null);
       setLoading(true);
 
+      // --- 1. NULL Conversion Logic ---
+      const finalFullName = fullName.trim() === "" ? null : fullName.trim();
+      const finalPhone = phone.trim() === "" ? null : phone.trim();
+
       try {
+        // Step A: Create the user in Supabase auth.users
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -27,18 +32,31 @@ const CreateUserForm = () => {
 
         if (error) throw error;
 
+        // Step B: UPSERT the profile row.
+        // UPSERT is required because the row already exists blankly (UPDATE permission is needed).
         if (data?.user) {
-          const { error: profileError } = await supabase.from("users").insert({
-            id: data.user.id, // Insert new profile row
-            full_name: fullName,
-            phone: phone,
-          });
+          const { error: profileError } = await supabase
+            .from("users")
+            .upsert({
+              id: data.user.id, // Mandatory for UPSERT
+              full_name: finalFullName,
+              phone: finalPhone,
+            })
+            .select("id");
 
           if (profileError) {
-            console.error("Profile creation failed:", profileError);
+            // Error throwing remains to report any policy or database failure
+            console.error(
+              "Profile upsert failed details (DB Error):",
+              profileError
+            );
+            throw new Error(
+              `Profile data upsert FAILED. Supabase Error: ${profileError.message}`
+            );
           }
         }
 
+        // Success: Only run if BOTH auth sign-up and profile upsert succeed
         setMessage({
           type: "success",
           text: `User ${email} created! An email confirmation has been sent.`,
@@ -49,6 +67,7 @@ const CreateUserForm = () => {
         setPhone("");
       } catch (error) {
         console.error("Create User Error:", error);
+        // Display the specific error message
         const displayMessage =
           error.message || "An unknown error occurred during user creation.";
 
@@ -98,6 +117,7 @@ const CreateUserForm = () => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder='new.user@example.com'
+          required={true}
         />
 
         <InputField

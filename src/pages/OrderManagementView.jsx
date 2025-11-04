@@ -8,33 +8,63 @@ const DELIVERY_STATUS_OPTIONS = [
 ];
 const PAYMENT_STATUS_OPTIONS = ["Pending", "Paid", "Failed", "Refunded"];
 
-// ⭐️ NEW: Function to convert data to CSV string
+/**
+ * Converts an array of objects (orders) into a CSV formatted string.
+ * @param {Array<Object>} data The array of order objects.
+ * @returns {string} The CSV formatted string.
+ */
 const convertToCSV = (data) => {
-  // Define headers for the CSV
-  const headers = [
-    "Order ID",
-    "Customer Name",
-    "Total Amount",
-    "Order Date",
-    "Payment Status",
-    "Delivery Status",
-  ];
+  if (!data || data.length === 0) return "";
 
-  // Convert orders array to CSV rows
-  const csvContent = data.map((order) => {
-    // Ensure data is wrapped in quotes if it contains commas or newlines
-    const date = new Date(order.created_at).toISOString();
-    return [
-      order.id,
-      `"${(order.customer_name || "N/A").replace(/"/g, '""')}"`, // Handle names with commas/quotes
-      order.total_amount || 0,
-      date,
-      order.payment_status,
-      order.delivery_status,
-    ].join(",");
-  });
+  // 1. Get the headers (keys of the first object)
+  const headers = Object.keys(data[0]);
 
-  return [headers.join(","), ...csvContent].join("\n");
+  // 2. Format the headers row
+  const csvHeaders = headers.join(",");
+
+  // 3. Format the data rows
+  const csvBody = data
+    .map((row) =>
+      headers
+        .map((fieldName) => {
+          // Handle null/undefined values and escape double quotes
+          let value =
+            row[fieldName] === null || row[fieldName] === undefined
+              ? ""
+              : row[fieldName].toString();
+          // Wrap values in double quotes if they contain commas or double quotes
+          if (value.includes(",") || value.includes('"')) {
+            // Escape existing double quotes by doubling them
+            value = value.replace(/"/g, '""');
+            value = `"${value}"`;
+          }
+          return value;
+        })
+        .join(",")
+    )
+    .join("\n");
+
+  return `${csvHeaders}\n${csvBody}`;
+};
+
+/**
+ * Handles the download of the CSV file.
+ * @param {Array<Object>} data The data to export.
+ * @param {string} filename The name for the downloaded file.
+ */
+const handleExport = (data, filename = "orders.csv") => {
+  const csvString = convertToCSV(data);
+  if (!csvString) return;
+
+  const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 };
 
 const OrderManagementView = ({
@@ -42,24 +72,16 @@ const OrderManagementView = ({
   ordersError,
   handleStatusChange,
   handlePaymentStatusChange,
+  // Added the handleExport function to props
+  // NOTE: We will use the local handleExport for this example as the original one was removed.
+  // In a real app, you might receive it as a prop if it contains business logic.
 }) => {
-  // ⭐️ NEW: Function to trigger CSV download
-  const handleExport = () => {
-    if (orders.length === 0) {
-      alert("No order data available to export.");
-      return;
-    }
-
-    const csvString = convertToCSV(orders);
-    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", "all_orders_export.csv");
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  // We'll use the local handleExport function, passing the current 'orders' data to it.
+  const exportOrdersToCSV = () => {
+    handleExport(
+      orders,
+      `orders_export_${new Date().toISOString().slice(0, 10)}.csv`
+    );
   };
 
   return (
@@ -68,18 +90,18 @@ const OrderManagementView = ({
         <h1 className='text-[#121212] font-extrabold text-6xl'>
           Manage Orders
         </h1>
-        {/* ⭐️ NEW: Export Button */}
+        {/* The Export Button is added back here */}
         <button
-          onClick={handleExport}
-          className={`px-4 py-2 text-sm font-medium rounded-lg shadow-md transition-colors 
+          onClick={exportOrdersToCSV}
+          disabled={!orders || orders.length === 0}
+          className={`py-2 px-4 rounded-lg text-white font-semibold shadow-md transition duration-200 
             ${
-              orders.length > 0
-                ? "bg-indigo-600 text-white hover:bg-indigo-700"
-                : "bg-gray-400 text-gray-700 cursor-not-allowed"
+              !orders || orders.length === 0
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
             }`}
-          disabled={orders.length === 0}
         >
-          Export Data to CSV ({orders.length})
+          Export Data to CSV
         </button>
       </div>
 
