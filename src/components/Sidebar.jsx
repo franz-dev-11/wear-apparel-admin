@@ -8,7 +8,7 @@ import {
   faUserFriends, // <-- Used for User Management
   faSignOutAlt,
   faHome,
-  faSearch,
+  faLock,
   faEllipsisV,
   faBoxes, // Used for Order Management (Inventory/Orders concept)
   faUser, // Used for Create New Users
@@ -142,7 +142,12 @@ function Sidebar({ onLogout, user, activeItem, setActiveItem }) {
         <div className='flex justify-center items-center'>
           <img src={logo} className='w-16 mb-2' alt='Logo' />
         </div>
-        <h1 className='text-center font-extrabold'>ADMIN CONSOLE</h1>
+
+        {/* <div className='flex'>
+          <FontAwesomeIcon icon={faLock} className='mr-3 w-4 h-4' />
+          <h1 className='font-bold'>Admin Console</h1>
+        </div> */}
+
         {/* <div className='relative'>
           <input
             type='text'
