@@ -42,9 +42,7 @@ const UserTable = () => {
 
   return (
     <div className='p-6'>
-      <h1 className='text-[#121212] font-extrabold text-6xl mb-10'>
-        Administrators
-      </h1>
+      <h1 className='text-[#121212] font-extrabold text-6xl mb-10'>Admins</h1>
       <h2 className='text-xl font-semibold text-gray-800 mb-2'>
         List of Admin Accounts:
       </h2>

@@ -97,7 +97,7 @@ const CreateUserForm = () => {
   return (
     <div className='bg-white p-6 rounded-xl shadow-lg border border-gray-100'>
       <h1 className='text-[#121212] font-extrabold text-6xl mb-10 w-max'>
-        Create New Users
+        Signup
       </h1>
 
       <MessageDisplay message={message} />

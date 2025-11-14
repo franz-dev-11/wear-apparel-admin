@@ -3,9 +3,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient.jsx";
 import CreateUserForm from "./CreateUserForm.jsx";
 import UserTable from "./UserTable.jsx";
-import Sidebar from "../components/Sidebar.jsx";
+import Header from "../components/Header.jsx";
 import OrderManagement from "./OrderManagement.jsx";
-import DashboardView from "./DashboardView.jsx"; // ⭐️ IMPORTED NEW COMPONENT
+import DashboardView from "./DashboardView.jsx";
 
 // Helper function to derive the active item ID from the URL hash
 const getActiveItemFromHash = (hash) => {
@@ -20,9 +20,6 @@ const DELIVERY_STATUS_OPTIONS = [
   "Cancelled",
 ];
 const PAYMENT_STATUS_OPTIONS = ["Pending", "Paid", "Failed", "Refunded"];
-
-// Note: Data processing functions (processRevenueData, processStatusData)
-// have been moved to DashboardView.jsx.
 
 const DashboardPage = ({ session }) => {
   const location = useLocation();
@@ -46,7 +43,7 @@ const DashboardPage = ({ session }) => {
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState(null);
 
-  // --- Logic for Sidebar and URL Management ---
+  // --- Logic for Header and URL Management ---
 
   const handleSidebarClick = useCallback(
     (itemId) => {
@@ -313,15 +310,17 @@ const DashboardPage = ({ session }) => {
 
   // --- Render Logic ---
   return (
-    <div className='flex min-h-screen bg-gray-50'>
-      <Sidebar
+    // ⭐️ CHANGED: Added min-h-screen to ensure the page always fills the viewport height
+    <div className='bg-gray-50 min-h-screen'>
+      <Header
         user={userWithFullName}
         onLogout={async () => await supabase.auth.signOut()}
         activeItem={activeItem}
         setActiveItem={handleSidebarClick}
       />
 
-      <main className='flex-1 p-6 ml-64 min-w-0'>
+      {/* Main content area: pt-20 pushes content below the fixed header */}
+      <main className='flex-1 p-6 pt-20 min-w-0'>
         {/* 1. Dashboard View */}
         {(activeItem === "dashboard" || activeItem === "") && (
           <DashboardView
@@ -347,7 +346,8 @@ const DashboardPage = ({ session }) => {
 
         {/* 3. Create User Form View */}
         {activeItem === "create-users" && (
-          <div className=' max-w-lg'>
+          <div className='min-h-screen flex items-center justify-center bg-gray-50 p-32 mt-[-230px]'>
+            {/* The form component */}
             <CreateUserForm />
           </div>
         )}
