@@ -1,236 +1,72 @@
-import React from "react";
-
-const DELIVERY_STATUS_OPTIONS = [
-  "Processing",
-  "Shipped",
-  "Delivered",
-  "Cancelled",
-];
-const PAYMENT_STATUS_OPTIONS = ["Pending", "Paid", "Failed", "Refunded"];
+import { useState } from "react";
+import { Lock, Eye, EyeOff } from "lucide-react";
 
 /**
- * Converts an array of objects (orders) into a CSV formatted string.
- * @param {Array<Object>} data The array of order objects.
- * @returns {string} The CSV formatted string.
+ * A specialized input field for passwords that includes a toggle
+ * to show or hide the password text.
  */
-const convertToCSV = (data) => {
-  if (!data || data.length === 0) return "";
-
-  // 1. Define the headers explicitly to control column order in the CSV
-  // Add 'payment_method' to the list of fields to export.
-  const headers = [
-    "id",
-    "customer_name",
-    "created_at",
-    "payment_method", // <-- ADDED HERE
-    "payment_status",
-    "delivery_status",
-    "total_amount",
-    // Add any other fields you need here
-  ];
-
-  // 2. Format the headers row (using user-friendly names, if needed, but using field names here for simplicity)
-  const csvHeaders = headers.join(",");
-
-  // 3. Format the data rows
-  const csvBody = data
-    .map((row) =>
-      headers
-        .map((fieldName) => {
-          // Handle null/undefined values and escape double quotes
-          let value =
-            row[fieldName] === null || row[fieldName] === undefined
-              ? ""
-              : row[fieldName].toString();
-          // Wrap values in double quotes if they contain commas or double quotes
-          if (value.includes(",") || value.includes('"')) {
-            // Escape existing double quotes by doubling them
-            value = value.replace(/"/g, '""');
-            value = `"${value}"`;
-          }
-          return value;
-        })
-        .join(",")
-    )
-    .join("\n");
-
-  return `${csvHeaders}\n${csvBody}`;
-};
-
-/**
- * Handles the download of the CSV file.
- * @param {Array<Object>} data The data to export.
- * @param {string} filename The name for the downloaded file.
- */
-const handleExport = (data, filename = "orders.csv") => {
-  const csvString = convertToCSV(data);
-  if (!csvString) return;
-
-  const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.setAttribute("download", filename);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-};
-
-const OrderManagementView = ({
-  orders,
-  ordersError,
-  handleStatusChange,
-  handlePaymentStatusChange,
-  // Added the handleExport function to props
-  // NOTE: We will use the local handleExport for this example as the original one was removed.
-  // In a real app, you might receive it as a prop if it contains business logic.
+const PasswordInputField = ({
+  label,
+  value,
+  onChange,
+  placeholder,
+  required = true,
 }) => {
-  // We'll use the local handleExport function, passing the current 'orders' data to it.
-  const exportOrdersToCSV = () => {
-    handleExport(
-      orders,
-      `orders_export_${new Date().toISOString().slice(0, 10)}.csv`
-    );
+  // State to manage the visibility of the password (true = show/text, false = hide/password)
+  const [isVisible, setIsVisible] = useState(false);
+
+  const toggleVisibility = () => {
+    setIsVisible(!isVisible);
   };
 
   return (
-    <div className='bg-white p-6 rounded-xl shadow-lg border border-gray-100'>
-      <div className='flex justify-between items-center mb-10'>
-        <h1 className='text-[#121212] font-extrabold text-6xl'>
-          Manage Orders
-        </h1>
-        {/* The Export Button is added back here */}
+    <div className='relative'>
+      {/* Label for the input field */}
+      <label
+        htmlFor='password-input'
+        className='block text-sm font-medium text-gray-700'
+      >
+        {label}
+      </label>
+
+      <div className='mt-1 relative rounded-md shadow-sm'>
+        {/* Static Icon on the left (Lock) */}
+        <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
+          <Lock className='h-5 w-5 text-gray-400' aria-hidden='true' />
+        </div>
+
+        {/* The main input element */}
+        <input
+          id='password-input'
+          name='password'
+          // Toggles the input type between 'password' and 'text'
+          type={isVisible ? "text" : "password"}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          required={required}
+          // Styling assumes Tailwind/similar to your existing InputField
+          className='block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 sm:text-sm'
+        />
+
+        {/* Visibility Toggle Button on the right */}
         <button
-          onClick={exportOrdersToCSV}
-          disabled={!orders || orders.length === 0}
-          className={`py-2 px-4 rounded-lg text-white font-semibold shadow-md transition duration-200 
-            ${
-              !orders || orders.length === 0
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            }`}
+          type='button'
+          onClick={toggleVisibility}
+          className='absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 text-gray-500 hover:text-gray-700 focus:outline-none transition duration-150 ease-in-out'
+          aria-label={isVisible ? "Hide password" : "Show password"}
         >
-          Export Data to CSV
+          {isVisible ? (
+            // Show EyeOff icon when password is visible (type='text')
+            <EyeOff className='h-5 w-5' aria-hidden='true' />
+          ) : (
+            // Show Eye icon when password is hidden (type='password')
+            <Eye className='h-5 w-5' aria-hidden='true' />
+          )}
         </button>
       </div>
-
-      <h2 className='text-xl font-semibold text-gray-800 mb-4'>
-        Order Management Interface
-      </h2>
-
-      {ordersError && <p className='text-red-500'>Error: {ordersError}</p>}
-
-      {!ordersError && orders.length > 0 && (
-        <div className='overflow-x-auto'>
-          <table className='min-w-full divide-y divide-gray-200'>
-            <thead>
-              <tr>
-                <th className='px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                  Order ID
-                </th>
-                <th className='px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                  Customer
-                </th>
-                <th className='px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                  Order Date
-                </th>
-                {/* NEW HEADER: Payment Method */}
-                <th className='px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                  Payment Method
-                </th>
-                <th className='px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                  Payment Status
-                </th>
-                <th className='px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                  Status (Delivery)
-                </th>
-                <th className='px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                  Total
-                </th>
-              </tr>
-            </thead>
-            <tbody className='bg-white divide-y divide-gray-200'>
-              {orders.map((order) => (
-                <tr key={order.id}>
-                  <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
-                    {order.id}
-                  </td>
-                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-                    {order.customer_name || "N/A"}
-                  </td>
-                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-                    {new Date(order.created_at).toLocaleDateString()}
-                  </td>
-
-                  {/* NEW DATA CELL: Payment Method */}
-                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-                    {order.payment_method || "N/A"}
-                  </td>
-
-                  {/* Editable Payment Status Dropdown */}
-                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-                    <select
-                      value={order.payment_status}
-                      onChange={(e) =>
-                        handlePaymentStatusChange(order.id, e.target.value)
-                      }
-                      className={`p-1 border rounded text-xs leading-5 font-semibold 
-                        ${
-                          order.payment_status === "Paid"
-                            ? "bg-green-100 text-green-800 border-green-300"
-                            : order.payment_status === "Pending"
-                            ? "bg-yellow-100 text-yellow-800 border-yellow-300"
-                            : "bg-red-100 text-red-800 border-red-300"
-                        }`}
-                    >
-                      {PAYMENT_STATUS_OPTIONS.map((status) => (
-                        <option key={status} value={status}>
-                          {status}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-
-                  {/* Editable Delivery Status Dropdown (Using delivery_status) */}
-                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-                    <select
-                      value={order.delivery_status}
-                      onChange={(e) =>
-                        handleStatusChange(order.id, e.target.value)
-                      }
-                      className={`p-1 border rounded text-xs leading-5 font-semibold 
-                        ${
-                          order.delivery_status === "Delivered"
-                            ? "bg-green-100 text-green-800 border-green-300"
-                            : order.delivery_status === "Shipped"
-                            ? "bg-blue-100 text-blue-800 border-blue-300"
-                            : "bg-yellow-100 text-yellow-800 border-yellow-300"
-                        }`}
-                    >
-                      {DELIVERY_STATUS_OPTIONS.map((status) => (
-                        <option key={status} value={status}>
-                          {status}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-
-                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-                    ₱{(order.total_amount || 0).toFixed(2)}{" "}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {!ordersError && orders.length === 0 && (
-        <p className='text-gray-500'>No orders found.</p>
-      )}
     </div>
   );
 };
 
-export default OrderManagementView;
+export default PasswordInputField;
