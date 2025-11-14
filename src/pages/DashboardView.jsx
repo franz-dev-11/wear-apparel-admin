@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 // Import all of D3 (assuming 'd3' package is installed)
 import * as d3 from "d3";
 // Import Icons from lucide-react
+import { DollarSign, ShoppingBag, BarChart3, Star } from "lucide-react";
 
 // Helper function to aggregate total revenue over time (daily)
 const processRevenueData = (orders) => {
@@ -245,6 +246,13 @@ const DashboardView = ({ greetingName, dashboardStats, orders }) => {
   // Set minimum height for chart containers to ensure D3 has space
   const chartStyle = { minHeight: "320px" };
 
+  // Component to render the icon with the dark circle background
+  const IconCircle = ({ IconComponent }) => (
+    <div className='w-12 h-12 bg-black/30 rounded-full flex items-center justify-center ml-auto'>
+      <IconComponent size={24} className='text-white' />
+    </div>
+  );
+
   return (
     <>
       <h1 className='text-[#121212] font-extrabold text-6xl mb-10 ml-6 mt-6'>
@@ -264,6 +272,7 @@ const DashboardView = ({ greetingName, dashboardStats, orders }) => {
             <span className='text-sm font-medium text-white uppercase tracking-wider'>
               Total Sales (30 Days)
             </span>
+            <IconCircle IconComponent={DollarSign} />
           </div>
           {/* Bottom Row: Value */}
           <h3 className='text-4xl font-bold text-white'>
@@ -278,6 +287,7 @@ const DashboardView = ({ greetingName, dashboardStats, orders }) => {
             <span className='text-sm font-medium text-white uppercase tracking-wider'>
               New Orders (30 Days)
             </span>
+            <IconCircle IconComponent={ShoppingBag} />
           </div>
           {/* Middle Content */}
           <h3 className='text-4xl font-bold text-white mt-1'>
@@ -296,6 +306,7 @@ const DashboardView = ({ greetingName, dashboardStats, orders }) => {
             <span className='text-sm font-medium text-white uppercase tracking-wider'>
               Avg Order Value (30 Days)
             </span>
+            <IconCircle IconComponent={BarChart3} />
           </div>
           {/* Middle Content */}
           <h3 className='text-4xl font-bold text-white mt-1'>
@@ -315,6 +326,7 @@ const DashboardView = ({ greetingName, dashboardStats, orders }) => {
             <span className='text-sm font-medium text-white uppercase tracking-wider'>
               Top Item Sold (30 Days)
             </span>
+            <IconCircle IconComponent={Star} />
           </div>
           {/* Middle Content */}
           <h3 className='text-4xl font-bold text-white mt-1'>
@@ -326,7 +338,7 @@ const DashboardView = ({ greetingName, dashboardStats, orders }) => {
       </div>
 
       {/* ⚡️ CHARTS AREA (D3) */}
-      <div className='mt-10 space-y-16'>
+      <div className='mt-10 space-y-8'>
         <h2 className='text-3xl font-bold text-gray-800 ml-6'>
           Recent Activity & Trends
         </h2>

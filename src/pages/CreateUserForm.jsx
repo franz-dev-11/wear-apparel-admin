@@ -1,152 +1,56 @@
-import { useState, useCallback } from "react";
-import { Mail, Lock, User, Phone } from "lucide-react";
-import { supabase } from "../supabaseClient.jsx";
-import InputField from "../components/InputField.jsx";
-import MessageDisplay from "../components/MessageDisplay.jsx";
-import LoadingSpinner from "../components/LoadingSpinner.jsx";
+import { useState } from "react";
+import { Eye, EyeOff, Lock } from "lucide-react";
 
-const CreateUserForm = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState(null);
+const PasswordInputField = ({
+  label,
+  value,
+  onChange,
+  placeholder,
+  required = true,
+}) => {
+  const [isVisible, setIsVisible] = useState(false);
 
-  const handleCreateUser = useCallback(
-    async (e) => {
-      e.preventDefault();
-      setMessage(null);
-      setLoading(true);
-
-      // --- 1. NULL Conversion Logic ---
-      const finalFullName = fullName.trim() === "" ? null : fullName.trim();
-      const finalPhone = phone.trim() === "" ? null : phone.trim();
-
-      try {
-        // Step A: Create the user in Supabase auth.users
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-
-        if (error) throw error;
-
-        // Step B: UPSERT the profile row.
-        // UPSERT is required because the row already exists blankly (UPDATE permission is needed).
-        if (data?.user) {
-          const { error: profileError } = await supabase
-            .from("users")
-            .upsert({
-              id: data.user.id, // Mandatory for UPSERT
-              full_name: finalFullName,
-              phone: finalPhone,
-            })
-            .select("id");
-
-          if (profileError) {
-            // Error throwing remains to report any policy or database failure
-            console.error(
-              "Profile upsert failed details (DB Error):",
-              profileError
-            );
-            throw new Error(
-              `Profile data upsert FAILED. Supabase Error: ${profileError.message}`
-            );
-          }
-        }
-
-        // Success: Only run if BOTH auth sign-up and profile upsert succeed
-        setMessage({
-          type: "success",
-          text: `User ${email} created! An email confirmation has been sent.`,
-        });
-        setEmail("");
-        setPassword("");
-        setFullName("");
-        setPhone("");
-      } catch (error) {
-        console.error("Create User Error:", error);
-        // Display the specific error message
-        const displayMessage =
-          error.message || "An unknown error occurred during user creation.";
-
-        setMessage({
-          type: "error",
-          text: displayMessage,
-        });
-      } finally {
-        setLoading(false);
-      }
-    },
-    [email, password, fullName, phone]
-  );
+  const toggleVisibility = () => {
+    setIsVisible(!isVisible);
+  };
 
   return (
-    <div className='bg-white p-6 rounded-xl shadow-lg border border-gray-100'>
-      <h1 className='text-[#121212] font-extrabold text-6xl mb-10 w-max'>
-        Create New Users
-      </h1>
-
-      <MessageDisplay message={message} />
-
-      <form onSubmit={handleCreateUser} className='space-y-4'>
-        <InputField
-          icon={User}
-          label='Full Name'
-          type='text'
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          placeholder='Full Name (e.g., Jane Doe)'
+    <div className='relative'>
+      <label
+        htmlFor='password'
+        className='block text-sm font-medium text-gray-700'
+      >
+        {label}
+      </label>
+      <div className='mt-1 relative rounded-md shadow-sm'>
+        <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
+          <Lock className='h-5 w-5 text-gray-400' aria-hidden='true' />
+        </div>
+        <input
+          id='password'
+          name='password'
+          type={isVisible ? "text" : "password"} // Toggles type attribute
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          required={required}
+          className='block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 sm:text-sm'
         />
-
-        <InputField
-          icon={Phone}
-          label='Phone Number'
-          type='tel'
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder='(555) 555-1234'
-          required={false}
-        />
-
-        <InputField
-          icon={Mail}
-          label='User Email'
-          type='email'
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder='new.user@example.com'
-          required={true}
-        />
-
-        <InputField
-          icon={Lock}
-          label='User Password'
-          type='password'
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder='••••••••'
-          required={true}
-        />
-
         <button
-          type='submit'
-          disabled={loading}
-          className='w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-md text-base font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed'
+          type='button'
+          onClick={toggleVisibility}
+          className='absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 text-gray-500 hover:text-gray-700 focus:outline-none'
+          aria-label={isVisible ? "Hide password" : "Show password"}
         >
-          {loading ? (
-            <>
-              <LoadingSpinner />
-              Creating User...
-            </>
+          {isVisible ? (
+            <EyeOff className='h-5 w-5' aria-hidden='true' />
           ) : (
-            "Create User"
+            <Eye className='h-5 w-5' aria-hidden='true' />
           )}
         </button>
-      </form>
+      </div>
     </div>
   );
 };
 
-export default CreateUserForm;
+export default PasswordInputField;

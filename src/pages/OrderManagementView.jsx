@@ -125,6 +125,10 @@ const OrderManagementView = ({
                 <th className='px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                   Order Date
                 </th>
+                {/* NEW HEADER: Payment Method */}
+                <th className='px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                  Payment Method
+                </th>
                 <th className='px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                   Payment Status
                 </th>
@@ -147,6 +151,11 @@ const OrderManagementView = ({
                   </td>
                   <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
                     {new Date(order.created_at).toLocaleDateString()}
+                  </td>
+
+                  {/* NEW DATA CELL: Payment Method */}
+                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
+                    {order.payment_method || "N/A"}
                   </td>
 
                   {/* Editable Payment Status Dropdown */}
