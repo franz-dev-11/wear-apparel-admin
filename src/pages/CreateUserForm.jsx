@@ -1,17 +1,13 @@
 import { useState, useCallback } from "react";
-// Re-adding Lock, User, and Phone icons
 import { Mail, Lock, User, Phone } from "lucide-react";
 import { supabase } from "../supabaseClient.jsx";
 import InputField from "../components/InputField.jsx";
 import MessageDisplay from "../components/MessageDisplay.jsx";
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
-// Keeping the new component for password
-import PasswordInputField from "../components/PasswordInputField.jsx";
 
 const CreateUserForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  // Re-introducing original state variables
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,7 +19,7 @@ const CreateUserForm = () => {
       setMessage(null);
       setLoading(true);
 
-      // --- 1. NULL Conversion Logic (Reverted to original) ---
+      // --- 1. NULL Conversion Logic ---
       const finalFullName = fullName.trim() === "" ? null : fullName.trim();
       const finalPhone = phone.trim() === "" ? null : phone.trim();
 
@@ -37,6 +33,7 @@ const CreateUserForm = () => {
         if (error) throw error;
 
         // Step B: UPSERT the profile row.
+        // UPSERT is required because the row already exists blankly (UPDATE permission is needed).
         if (data?.user) {
           const { error: profileError } = await supabase
             .from("users")
@@ -48,6 +45,7 @@ const CreateUserForm = () => {
             .select("id");
 
           if (profileError) {
+            // Error throwing remains to report any policy or database failure
             console.error(
               "Profile upsert failed details (DB Error):",
               profileError
@@ -65,11 +63,11 @@ const CreateUserForm = () => {
         });
         setEmail("");
         setPassword("");
-        // Re-setting all state variables
         setFullName("");
         setPhone("");
       } catch (error) {
         console.error("Create User Error:", error);
+        // Display the specific error message
         const displayMessage =
           error.message || "An unknown error occurred during user creation.";
 
@@ -81,7 +79,7 @@ const CreateUserForm = () => {
         setLoading(false);
       }
     },
-    [email, password, fullName, phone] // Dependency array restored
+    [email, password, fullName, phone]
   );
 
   return (
@@ -93,7 +91,6 @@ const CreateUserForm = () => {
       <MessageDisplay message={message} />
 
       <form onSubmit={handleCreateUser} className='space-y-4'>
-        {/* Re-introduced Full Name */}
         <InputField
           icon={User}
           label='Full Name'
@@ -103,7 +100,6 @@ const CreateUserForm = () => {
           placeholder='Full Name (e.g., Jane Doe)'
         />
 
-        {/* Re-introduced Phone Number */}
         <InputField
           icon={Phone}
           label='Phone Number'
@@ -114,7 +110,6 @@ const CreateUserForm = () => {
           required={false}
         />
 
-        {/* Email field remains */}
         <InputField
           icon={Mail}
           label='User Email'
@@ -125,9 +120,10 @@ const CreateUserForm = () => {
           required={true}
         />
 
-        {/* *** UPDATED: Using PasswordInputField for view/hide functionality *** */}
-        <PasswordInputField
+        <InputField
+          icon={Lock}
           label='User Password'
+          type='password'
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder='••••••••'
@@ -154,4 +150,3 @@ const CreateUserForm = () => {
 };
 
 export default CreateUserForm;
-//sss
