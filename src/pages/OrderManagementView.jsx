@@ -16,10 +16,20 @@ const PAYMENT_STATUS_OPTIONS = ["Pending", "Paid", "Failed", "Refunded"];
 const convertToCSV = (data) => {
   if (!data || data.length === 0) return "";
 
-  // 1. Get the headers (keys of the first object)
-  const headers = Object.keys(data[0]);
+  // 1. Define the headers explicitly to control column order in the CSV
+  // Add 'payment_method' to the list of fields to export.
+  const headers = [
+    "id",
+    "customer_name",
+    "created_at",
+    "payment_method", // <-- ADDED HERE
+    "payment_status",
+    "delivery_status",
+    "total_amount",
+    // Add any other fields you need here
+  ];
 
-  // 2. Format the headers row
+  // 2. Format the headers row (using user-friendly names, if needed, but using field names here for simplicity)
   const csvHeaders = headers.join(",");
 
   // 3. Format the data rows
