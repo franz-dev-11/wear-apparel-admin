@@ -1,156 +1,217 @@
-import { useState, useCallback } from "react";
-// Re-adding Lock, User, and Phone icons
-import { Mail, Lock, User, Phone } from "lucide-react";
-import { supabase } from "../supabaseClient.jsx";
-import InputField from "../components/InputField.jsx";
-import MessageDisplay from "../components/MessageDisplay.jsx";
-import LoadingSpinner from "../components/LoadingSpinner.jsx";
-// Keeping the new component for password
-import PasswordInputField from "../components/PasswordInputField.jsx";
+import React from "react";
 
-const CreateUserForm = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  // Re-introducing original state variables
-  const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState(null);
+const DELIVERY_STATUS_OPTIONS = [
+  "Processing",
+  "Shipped",
+  "Delivered",
+  "Cancelled",
+];
+const PAYMENT_STATUS_OPTIONS = ["Pending", "Paid", "Failed", "Refunded"];
 
-  const handleCreateUser = useCallback(
-    async (e) => {
-      e.preventDefault();
-      setMessage(null);
-      setLoading(true);
+/**
+ * Converts an array of objects (orders) into a CSV formatted string.
+ * @param {Array<Object>} data The array of order objects.
+ * @returns {string} The CSV formatted string.
+ */
+const convertToCSV = (data) => {
+  if (!data || data.length === 0) return "";
 
-      // --- 1. NULL Conversion Logic (Reverted to original) ---
-      const finalFullName = fullName.trim() === "" ? null : fullName.trim();
-      const finalPhone = phone.trim() === "" ? null : phone.trim();
+  // 1. Get the headers (keys of the first object)
+  const headers = Object.keys(data[0]);
 
-      try {
-        // Step A: Create the user in Supabase auth.users
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-        });
+  // 2. Format the headers row
+  const csvHeaders = headers.join(",");
 
-        if (error) throw error;
-
-        // Step B: UPSERT the profile row.
-        if (data?.user) {
-          const { error: profileError } = await supabase
-            .from("users")
-            .upsert({
-              id: data.user.id, // Mandatory for UPSERT
-              full_name: finalFullName,
-              phone: finalPhone,
-            })
-            .select("id");
-
-          if (profileError) {
-            console.error(
-              "Profile upsert failed details (DB Error):",
-              profileError
-            );
-            throw new Error(
-              `Profile data upsert FAILED. Supabase Error: ${profileError.message}`
-            );
+  // 3. Format the data rows
+  const csvBody = data
+    .map((row) =>
+      headers
+        .map((fieldName) => {
+          // Handle null/undefined values and escape double quotes
+          let value =
+            row[fieldName] === null || row[fieldName] === undefined
+              ? ""
+              : row[fieldName].toString();
+          // Wrap values in double quotes if they contain commas or double quotes
+          if (value.includes(",") || value.includes('"')) {
+            // Escape existing double quotes by doubling them
+            value = value.replace(/"/g, '""');
+            value = `"${value}"`;
           }
-        }
+          return value;
+        })
+        .join(",")
+    )
+    .join("\n");
 
-        // Success: Only run if BOTH auth sign-up and profile upsert succeed
-        setMessage({
-          type: "success",
-          text: `User ${email} created! An email confirmation has been sent.`,
-        });
-        setEmail("");
-        setPassword("");
-        // Re-setting all state variables
-        setFullName("");
-        setPhone("");
-      } catch (error) {
-        console.error("Create User Error:", error);
-        const displayMessage =
-          error.message || "An unknown error occurred during user creation.";
+  return `${csvHeaders}\n${csvBody}`;
+};
 
-        setMessage({
-          type: "error",
-          text: displayMessage,
-        });
-      } finally {
-        setLoading(false);
-      }
-    },
-    [email, password, fullName, phone] // Dependency array restored
-  );
+/**
+ * Handles the download of the CSV file.
+ * @param {Array<Object>} data The data to export.
+ * @param {string} filename The name for the downloaded file.
+ */
+const handleExport = (data, filename = "orders.csv") => {
+  const csvString = convertToCSV(data);
+  if (!csvString) return;
+
+  const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
+const OrderManagementView = ({
+  orders,
+  ordersError,
+  handleStatusChange,
+  handlePaymentStatusChange,
+  // Added the handleExport function to props
+  // NOTE: We will use the local handleExport for this example as the original one was removed.
+  // In a real app, you might receive it as a prop if it contains business logic.
+}) => {
+  // We'll use the local handleExport function, passing the current 'orders' data to it.
+  const exportOrdersToCSV = () => {
+    handleExport(
+      orders,
+      `orders_export_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+  };
 
   return (
     <div className='bg-white p-6 rounded-xl shadow-lg border border-gray-100'>
-      <h1 className='text-[#121212] font-extrabold text-6xl mb-10 w-max'>
-        Create New Users
-      </h1>
-
-      <MessageDisplay message={message} />
-
-      <form onSubmit={handleCreateUser} className='space-y-4'>
-        {/* Re-introduced Full Name */}
-        <InputField
-          icon={User}
-          label='Full Name'
-          type='text'
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          placeholder='Full Name (e.g., Jane Doe)'
-        />
-
-        {/* Re-introduced Phone Number */}
-        <InputField
-          icon={Phone}
-          label='Phone Number'
-          type='tel'
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder='(555) 555-1234'
-          required={false}
-        />
-
-        {/* Email field remains */}
-        <InputField
-          icon={Mail}
-          label='User Email'
-          type='email'
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder='new.user@example.com'
-          required={true}
-        />
-
-        {/* *** UPDATED: Using PasswordInputField for view/hide functionality *** */}
-        <PasswordInputField
-          label='User Password'
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder='••••••••'
-          required={true}
-        />
-
+      <div className='flex justify-between items-center mb-10'>
+        <h1 className='text-[#121212] font-extrabold text-6xl'>
+          Manage Orders
+        </h1>
+        {/* The Export Button is added back here */}
         <button
-          type='submit'
-          disabled={loading}
-          className='w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-md text-base font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed'
+          onClick={exportOrdersToCSV}
+          disabled={!orders || orders.length === 0}
+          className={`py-2 px-4 rounded-lg text-white font-semibold shadow-md transition duration-200 
+            ${
+              !orders || orders.length === 0
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            }`}
         >
-          {loading ? (
-            <>
-              <LoadingSpinner />
-              Creating User...
-            </>
-          ) : (
-            "Create User"
-          )}
+          Export Data to CSV
         </button>
-      </form>
+      </div>
+
+      <h2 className='text-xl font-semibold text-gray-800 mb-4'>
+        Order Management Interface
+      </h2>
+
+      {ordersError && <p className='text-red-500'>Error: {ordersError}</p>}
+
+      {!ordersError && orders.length > 0 && (
+        <div className='overflow-x-auto'>
+          <table className='min-w-full divide-y divide-gray-200'>
+            <thead>
+              <tr>
+                <th className='px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                  Order ID
+                </th>
+                <th className='px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                  Customer
+                </th>
+                <th className='px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                  Order Date
+                </th>
+                <th className='px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                  Payment Status
+                </th>
+                <th className='px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                  Status (Delivery)
+                </th>
+                <th className='px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                  Total
+                </th>
+              </tr>
+            </thead>
+            <tbody className='bg-white divide-y divide-gray-200'>
+              {orders.map((order) => (
+                <tr key={order.id}>
+                  <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
+                    {order.id}
+                  </td>
+                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
+                    {order.customer_name || "N/A"}
+                  </td>
+                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
+                    {new Date(order.created_at).toLocaleDateString()}
+                  </td>
+
+                  {/* Editable Payment Status Dropdown */}
+                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
+                    <select
+                      value={order.payment_status}
+                      onChange={(e) =>
+                        handlePaymentStatusChange(order.id, e.target.value)
+                      }
+                      className={`p-1 border rounded text-xs leading-5 font-semibold 
+                        ${
+                          order.payment_status === "Paid"
+                            ? "bg-green-100 text-green-800 border-green-300"
+                            : order.payment_status === "Pending"
+                            ? "bg-yellow-100 text-yellow-800 border-yellow-300"
+                            : "bg-red-100 text-red-800 border-red-300"
+                        }`}
+                    >
+                      {PAYMENT_STATUS_OPTIONS.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+
+                  {/* Editable Delivery Status Dropdown (Using delivery_status) */}
+                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
+                    <select
+                      value={order.delivery_status}
+                      onChange={(e) =>
+                        handleStatusChange(order.id, e.target.value)
+                      }
+                      className={`p-1 border rounded text-xs leading-5 font-semibold 
+                        ${
+                          order.delivery_status === "Delivered"
+                            ? "bg-green-100 text-green-800 border-green-300"
+                            : order.delivery_status === "Shipped"
+                            ? "bg-blue-100 text-blue-800 border-blue-300"
+                            : "bg-yellow-100 text-yellow-800 border-yellow-300"
+                        }`}
+                    >
+                      {DELIVERY_STATUS_OPTIONS.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+
+                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
+                    ₱{(order.total_amount || 0).toFixed(2)}{" "}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {!ordersError && orders.length === 0 && (
+        <p className='text-gray-500'>No orders found.</p>
+      )}
     </div>
   );
 };
 
-export default CreateUserForm;
+export default OrderManagementView;
