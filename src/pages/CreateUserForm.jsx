@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Mail, Lock, User, Phone } from "lucide-react";
+import { Mail, Lock, User, Phone, Eye, EyeOff } from "lucide-react"; // Import Eye and EyeOff
 import { supabase } from "../supabaseClient.jsx";
 import InputField from "../components/InputField.jsx";
 import MessageDisplay from "../components/MessageDisplay.jsx";
@@ -12,6 +12,8 @@ const CreateUserForm = () => {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
+  // NEW STATE: To toggle password visibility
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleCreateUser = useCallback(
     async (e) => {
@@ -82,6 +84,16 @@ const CreateUserForm = () => {
     [email, password, fullName, phone]
   );
 
+  // Helper function to toggle password visibility
+  const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev);
+  };
+
+  // Determine the current icon and type for the password field
+  const passwordIcon = showPassword ? EyeOff : Lock; // Use EyeOff if visible, Lock if hidden
+  const passwordType = showPassword ? "text" : "password";
+  const toggleIcon = showPassword ? EyeOff : Eye; // Icon for the toggle button itself
+
   return (
     <div className='bg-white p-6 rounded-xl shadow-lg border border-gray-100'>
       <h1 className='text-[#121212] font-extrabold text-6xl mb-10 w-max'>
@@ -120,15 +132,35 @@ const CreateUserForm = () => {
           required={true}
         />
 
-        <InputField
-          icon={Lock}
-          label='User Password'
-          type='password'
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder='••••••••'
-          required={true}
-        />
+        {/* REVISED Password Input Field */}
+        <div className='relative'>
+          <InputField
+            icon={Lock} // Keep the lock icon inside the input for consistency
+            label='User Password'
+            type={passwordType} // Use dynamic type: "text" or "password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder='••••••••'
+            required={true}
+            // Add a right-padding class if your InputField component supports it
+            // or modify the component to account for the button's presence
+            className='pr-10'
+          />
+          {/* Toggle Button */}
+          <button
+            type='button'
+            onClick={togglePasswordVisibility}
+            className='absolute inset-y-0 right-0 top-1/2 transform -translate-y-1/2 flex items-center pr-3 focus:outline-none'
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {/* The icon for the toggle button */}
+            {showPassword ? (
+              <EyeOff className='h-5 w-5 text-gray-400' />
+            ) : (
+              <Eye className='h-5 w-5 text-gray-400' />
+            )}
+          </button>
+        </div>
 
         <button
           type='submit'
