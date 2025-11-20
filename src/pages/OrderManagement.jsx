@@ -78,7 +78,7 @@ const OrderManagement = ({
                           order.payment_status === "Paid"
                             ? "bg-green-100 text-green-800 border-green-300"
                             : order.payment_status === "Pending"
-                            ? "bg-yellow-100 text-yellow-800 border-yellow-300"
+                            ? "bg-orange-100 text-orange-800 border-orange-300" // CHANGED: from yellow to orange
                             : "bg-red-100 text-red-800 border-red-300"
                         }`}
                     >
@@ -103,7 +103,7 @@ const OrderManagement = ({
                             ? "bg-green-100 text-green-800 border-green-300"
                             : order.delivery_status === "Shipped"
                             ? "bg-blue-100 text-blue-800 border-blue-300"
-                            : "bg-yellow-100 text-yellow-800 border-yellow-300"
+                            : "bg-orange-100 text-orange-800 border-orange-300" // CHANGED: from yellow to orange for pending/other statuses
                         }`}
                     >
                       {DELIVERY_STATUS_OPTIONS.map((status) => (
