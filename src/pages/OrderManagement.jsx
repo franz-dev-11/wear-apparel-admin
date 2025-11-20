@@ -34,6 +34,9 @@ const OrderManagement = ({
                   Customer
                 </th>
                 <th className='px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                  Shipping Address
+                </th>
+                <th className='px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                   Payment Method
                 </th>
                 <th className='px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
@@ -59,6 +62,22 @@ const OrderManagement = ({
                   <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
                     {order.customer_name || "N/A"}
                   </td>
+
+                  {/* Shipping Address - Removed Attn: fullName line */}
+                  <td className='px-6 py-4 whitespace-normal text-sm text-gray-500'>
+                    {order.shipping_address ? (
+                      <>
+                        {order.shipping_address.addressLine1}
+                        <br />
+                        {order.shipping_address.city},{" "}
+                        {order.shipping_address.province}{" "}
+                        {order.shipping_address.zipCode}
+                      </>
+                    ) : (
+                      "N/A"
+                    )}
+                  </td>
+
                   <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
                     {order.payment_method || "N/A"}
                   </td>
@@ -78,7 +97,7 @@ const OrderManagement = ({
                           order.payment_status === "Paid"
                             ? "bg-green-100 text-green-800 border-green-300"
                             : order.payment_status === "Pending"
-                            ? "bg-orange-100 text-orange-800 border-orange-300" // CHANGED: from yellow to orange
+                            ? "bg-orange-100 text-orange-800 border-orange-300"
                             : "bg-red-100 text-red-800 border-red-300"
                         }`}
                     >
@@ -103,7 +122,7 @@ const OrderManagement = ({
                             ? "bg-green-100 text-green-800 border-green-300"
                             : order.delivery_status === "Shipped"
                             ? "bg-blue-100 text-blue-800 border-blue-300"
-                            : "bg-orange-100 text-orange-800 border-orange-300" // CHANGED: from yellow to orange for pending/other statuses
+                            : "bg-orange-100 text-orange-800 border-orange-300"
                         }`}
                     >
                       {DELIVERY_STATUS_OPTIONS.map((status) => (
